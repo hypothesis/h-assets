@@ -7,10 +7,10 @@ from pyramid.httpexceptions import HTTPNotFound  # type: ignore
 from pyramid.settings import aslist  # type: ignore
 from pyramid.static import static_view  # type: ignore
 
-T = TypeVar("T")
+T = TypeVar("T")  # pylint:disable=invalid-name
 
 
-class _CachedFile(Generic[T]):
+class _CachedFile(Generic[T]):  # pylint:disable=too-few-public-methods
     """
     Parses content from a file and caches the result.
 
@@ -118,6 +118,7 @@ class Environment:
 
         :param path: Path component of asset request
         :param query: Query string from asset request
+        :return: True if the asset path exists and the cache buster is valid
         """
         if path.startswith(self.assets_base_url):
             # Strip asset root (eg. `/assets/`) from path.

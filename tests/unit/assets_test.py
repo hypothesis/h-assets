@@ -8,12 +8,12 @@ from h_assets import Environment, assets_view
 
 
 class TestEnvironment:
-    def test_files_lists_bundle_files(self, mtime):
+    def test_files_lists_bundle_files(self):
         env = Environment("/assets", "bundles.ini", "manifest.json")
 
         assert env.files("app_js") == ["app.bundle.js", "vendor.bundle.js"]
 
-    def test_urls_generates_bundle_urls(self, mtime):
+    def test_urls_generates_bundle_urls(self):
         env = Environment("/assets", "bundles.ini", "manifest.json")
 
         assert env.urls("app_js") == [
@@ -21,7 +21,7 @@ class TestEnvironment:
             "/assets/vendor.bundle.js?1234",
         ]
 
-    def test_url_returns_cache_busted_url(self, mtime):
+    def test_url_returns_cache_busted_url(self):
         env = Environment("/assets", "bundles.ini", "manifest.json")
 
         assert env.url("app.bundle.js") == "/assets/app.bundle.js?abcdef"
@@ -34,8 +34,9 @@ class TestEnvironment:
         def fake_open(path):
             if path == "bundles.ini":
                 return StringIO(bundle_content)
-            elif path == "manifest.json":
+            if path == "manifest.json":
                 return StringIO(manifest_content)
+            raise FileNotFoundError()  # pragma: no cover
 
         open_file.side_effect = fake_open
 
@@ -137,8 +138,9 @@ def open_file(patch):
     def fake_open(path):
         if path == "bundles.ini":
             return StringIO(bundle_content)
-        elif path == "manifest.json":
+        if path == "manifest.json":
             return StringIO(manifest_content)
+        raise FileNotFoundError()  # pragma: no cover
 
     # nb. `autospec=False` is required when patching a builtin to avoid conflict
     # with implicitly added `create=True`.
