@@ -23,7 +23,7 @@ Using h-assets in a Pyramid project involves three steps:
    output directory. Conventionally Hypothesis projects use a folder called
    `build` in the repository root.
 2. In the output directory generate a JSON manifest file (eg. `manifest.json`)
-    that maps asset paths to URLs with cache-busting query strings.
+    that maps asset paths to URLs with cache-busting query strings. Example content:
 
    ```json
    {
@@ -36,7 +36,7 @@ Using h-assets in a Pyramid project involves three steps:
    the first few characters of a hash (eg. SHA-1) of the file's contents.
 
 3. Create an INI file (eg. `assets.ini`) that defines collections ("bundles")
-   of assets that are used together.
+   of assets that are used together. Example content:
 
    ```ini
    [bundles]
@@ -51,7 +51,7 @@ Using h-assets in a Pyramid project involves three steps:
 
 ### Registering a Pyramid view to serve assets
 
-To serve asses using h-assets, a Pyramid view needs to be created using the
+To serve assets using h-assets, a Pyramid view needs to be created using the
 `assets_view` function.
 
 In the Pyramid app configuration, define a route where the URL is a base URL
@@ -62,10 +62,9 @@ def includeme(config):
     config.add_route("assets", "/assets/*subpath")
 ```
 
-To define the associated view, an asset `Environment` needs to be created which
-handles generation of cache-busted asset URLs based on the bundle
-configuration. Then a Pyramid view is defined which uses `assets_view` to
-generate the view callable:
+To register the view associated with this route, first create an `Environment`
+to handle generation of asset URLs. Then use `assets_view` to create the view
+callable for use with `config.add_view`:
 
 ```py
 import os.path
@@ -74,11 +73,18 @@ from h_assets import Environment, assets_view
 
 
 def includeme(config):
+    # This assumes the following repository structure:
+    #   build/ - Compiled frontend assets
+    #     manifest.json
+    #   projectname/
+    #     assets.py - This module
+    #     routes.py - Route definitions
+    #     assets.ini
     root_dir = os.path.dirname(__file__)
 
     assets_env = Environment(
         assets_base_url="/assets",
-        bundle_config_path=f"{root_dir}/assets.ini",
+        bundle_config_path="{root_dir}/assets.ini",
         manifest_path=f"{root_dir}/../build/manifest.json",
     )
 
@@ -93,7 +99,7 @@ def includeme(config):
 
 To get a list of asset URLs for assets in a bundle, use the `urls` method of the
 asset `Environment`. A common pattern is to expose these methods as global helpers
-in the templating engine being used to generate HTML responses. For example,
+in the templating environment being used to generate HTML responses. For example,
 in a project using `pyramid_jinja2`:
 
 ```py
