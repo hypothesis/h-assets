@@ -85,8 +85,16 @@ class Environment:
         :param auto_reload: If True the config and manifest files are
                             automatically reloaded if they change.
         """
+
+        # Parse an asset manifest. This doesn't actually validate the structure,
+        # it just documents the expected format.
+        def load_manifest(file_: TextIO) -> Dict[str, str]:
+            return json.load(file_)
+
         self.assets_base_url = assets_base_url
-        self.manifest = _CachedFile(manifest_path, json.load, auto_reload=auto_reload)
+        self.manifest = _CachedFile(
+            manifest_path, load_manifest, auto_reload=auto_reload
+        )
         self.bundles = _CachedFile(
             bundle_config_path, _load_bundles, auto_reload=auto_reload
         )
