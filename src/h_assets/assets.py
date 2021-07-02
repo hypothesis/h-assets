@@ -1,12 +1,11 @@
 import configparser
 import json
-import os
-from typing import Callable, Dict, List, Generic, Optional, TextIO, Tuple, TypeVar
+from os.path import dirname, getmtime
+from typing import Callable, Dict, Generic, List, Optional, TextIO, Tuple, TypeVar
 
 from pyramid.httpexceptions import HTTPNotFound  # type: ignore
 from pyramid.settings import aslist  # type: ignore
 from pyramid.static import static_view  # type: ignore
-
 
 T = TypeVar("T")
 
@@ -46,7 +45,7 @@ class _CachedFile(Generic[T]):
         if self._cached and not self._auto_reload:
             return self._cached[1]
 
-        current_mtime = os.path.getmtime(self.path)
+        current_mtime = getmtime(self.path)
         if not self._cached or self._cached[0] < current_mtime:
             with open(self.path) as handle:
                 self._cached = (current_mtime, self.loader(handle))
@@ -133,7 +132,7 @@ class Environment:
 
     def asset_root(self):
         """Return the root directory from which assets are served."""
-        return os.path.dirname(self.manifest.path)
+        return dirname(self.manifest.path)
 
 
 def _check_cache_buster(env: Environment, wrapped):
