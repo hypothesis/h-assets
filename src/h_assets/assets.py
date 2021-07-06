@@ -1,16 +1,14 @@
 import configparser
 import json
 from os.path import dirname, getmtime
-from typing import Callable, Dict, Generic, List, Optional, TextIO, Tuple, TypeVar
+from typing import Dict, List, TextIO
 
 from pyramid.httpexceptions import HTTPNotFound  # type: ignore
 from pyramid.settings import aslist  # type: ignore
 from pyramid.static import static_view  # type: ignore
 
-T = TypeVar("T")  # pylint:disable=invalid-name
 
-
-class _CachedFile(Generic[T]):  # pylint:disable=too-few-public-methods
+class _CachedFile:  # pylint:disable=too-few-public-methods
     """
     Parses content from a file and caches the result.
 
@@ -18,7 +16,7 @@ class _CachedFile(Generic[T]):  # pylint:disable=too-few-public-methods
     provided loader.
     """
 
-    def __init__(self, path: str, loader: Callable[[TextIO], T], auto_reload=False):
+    def __init__(self, path: str, loader, auto_reload=False):
         """
         Create the CachedFile object.
 
@@ -29,27 +27,29 @@ class _CachedFile(Generic[T]):  # pylint:disable=too-few-public-methods
         """
 
         self.path = path
-        self.loader = loader
+        self._loader = loader
         self._auto_reload = auto_reload
+        self._last_modified_time = None
+        self._cached_content = None
 
-        # (mtime, data) tuple of parsed file content
-        self._cached: Optional[Tuple[float, T]] = None
-
-    def load(self) -> T:
+    def load(self):
         """
         Return the content of the file parsed with the loader.
 
         The file is parsed when this is called for the first time and, if
         auto-reload is enabled, when the mtime of the file changes.
         """
-        if self._cached and not self._auto_reload:
-            return self._cached[1]
+        if self._cached_content and not self._auto_reload:
+            return self._cached_content
 
         current_mtime = getmtime(self.path)
-        if not self._cached or self._cached[0] < current_mtime:
+        if not self._cached_content or self._last_modified_time < current_mtime:
             with open(self.path) as handle:
-                self._cached = (current_mtime, self.loader(handle))
-        return self._cached[1]
+                self._cached_content = self._loader(handle)
+
+            self._last_modified_time = current_mtime
+
+        return self._cached_content
 
 
 class Environment:
