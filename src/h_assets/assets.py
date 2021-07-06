@@ -1,11 +1,10 @@
 import configparser
 import json
 from os.path import dirname, getmtime
-from typing import Dict, List, TextIO
 
-from pyramid.httpexceptions import HTTPNotFound  # type: ignore
-from pyramid.settings import aslist  # type: ignore
-from pyramid.static import static_view  # type: ignore
+from pyramid.httpexceptions import HTTPNotFound
+from pyramid.settings import aslist
+from pyramid.static import static_view
 
 
 class _CachedFile:  # pylint:disable=too-few-public-methods
@@ -16,14 +15,14 @@ class _CachedFile:  # pylint:disable=too-few-public-methods
     provided loader.
     """
 
-    def __init__(self, path: str, loader, auto_reload=False):
+    def __init__(self, path, loader, auto_reload=False):
         """
         Create the CachedFile object.
 
         :param path: The path to the file to load
         :param loader: A callable that parses content from a file
         :param auto_reload: If True, the parsed content is discarded if the
-                            mtime of the file changes.
+            mtime of the file changes.
         """
 
         self.path = path
@@ -68,27 +67,23 @@ class Environment:
     """
 
     def __init__(
-        self,
-        assets_base_url: str,
-        bundle_config_path: str,
-        manifest_path: str,
-        auto_reload=False,
+        self, assets_base_url, bundle_config_path, manifest_path, auto_reload=False
     ):
         """
         Construct an Environment from the given configuration files.
 
         :param assets_base_url: The URL at which assets will be served,
-                                excluding the trailing slash.
+            excluding the trailing slash.
         :param bundle_config_path: Asset bundles config file.
         :param manifest_path: JSON file mapping file paths in the bundle config
-                              file to cache-busted URLs.
+            file to cache-busted URLs.
         :param auto_reload: If True the config and manifest files are
-                            automatically reloaded if they change.
+            automatically reloaded if they change.
         """
 
-        # Parse an asset manifest. This doesn't actually validate the structure,
-        # it just documents the expected format.
-        def load_manifest(file_: TextIO) -> Dict[str, str]:
+        # Parse an asset manifest. This doesn't actually validate the
+        # structure, it just documents the expected format.
+        def load_manifest(file_):
             return json.load(file_)
 
         self.assets_base_url = assets_base_url
@@ -99,12 +94,13 @@ class Environment:
             bundle_config_path, _load_bundles, auto_reload=auto_reload
         )
 
-    def files(self, bundle: str):
+    def files(self, bundle):
         """Return the file paths for all files in a bundle."""
+
         bundles = self.bundles.load()
         return bundles[bundle]
 
-    def urls(self, bundle: str):
+    def urls(self, bundle):
         """
         Return asset URLs for all files in a bundle.
 
@@ -115,12 +111,13 @@ class Environment:
 
         return [self.url(path) for path in bundles[bundle]]
 
-    def url(self, path: str):
+    def url(self, path):
         """Return the cache-busted URL for an asset with a given path."""
+
         manifest = self.manifest.load()
         return "{}/{}".format(self.assets_base_url, manifest[path])
 
-    def check_cache_buster(self, path: str, query: str) -> bool:
+    def check_cache_buster(self, path, query):
         """
         Check if the cache buster in an asset request URL matches the manifest.
 
@@ -128,6 +125,7 @@ class Environment:
         :param query: Query string from asset request
         :return: True if the asset path exists and the cache buster is valid
         """
+
         if path.startswith(self.assets_base_url):
             # Strip asset root (eg. `/assets/`) from path.
             path = path[len(self.assets_base_url) + 1 :]
@@ -141,32 +139,35 @@ class Environment:
 
     def asset_root(self):
         """Return the root directory from which assets are served."""
+
         return dirname(self.manifest.path)
 
 
-def _check_cache_buster(env: Environment, wrapped):
+def _check_cache_buster(environment, wrapped):
     def wrapper(context, request):
-        if not env.check_cache_buster(request.path, request.query_string):
+        if not environment.check_cache_buster(request.path, request.query_string):
             return HTTPNotFound()
         return wrapped(context, request)
 
     return wrapper
 
 
-def _load_bundles(file_: TextIO) -> Dict[str, List[str]]:
+def _load_bundles(file_):
     """
     Parse a bundle config ini file.
 
     Returns a mapping of bundle name to files that make up the bundle.
     """
+
     parser = configparser.ConfigParser()
     parser.read_file(file_)
     return {k: aslist(v) for k, v in parser.items("bundles")}
 
 
-def assets_view(env: Environment):
+def assets_view(environment: Environment):
     """Return a Pyramid view which serves static assets from ``env``."""
 
     return _check_cache_buster(
-        env, static_view(env.asset_root(), cache_max_age=None, use_subpath=True)
+        environment,
+        static_view(environment.asset_root(), cache_max_age=None, use_subpath=True),
     )
