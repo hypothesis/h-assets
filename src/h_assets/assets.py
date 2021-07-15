@@ -1,12 +1,9 @@
-import configparser
-import json
 from os.path import dirname
 
 from pyramid.httpexceptions import HTTPNotFound
-from pyramid.settings import aslist
 from pyramid.static import static_view
 
-from h_assets.cached_file import CachedFile
+from h_assets.cached_file import CachedBundleFile, CachedJSONFile
 
 
 class Environment:
@@ -39,18 +36,9 @@ class Environment:
             automatically reloaded if they change.
         """
 
-        # Parse an asset manifest. This doesn't actually validate the
-        # structure, it just documents the expected format.
-        def load_manifest(file_):
-            return json.load(file_)
-
         self.assets_base_url = assets_base_url
-        self.manifest = CachedFile(
-            manifest_path, load_manifest, auto_reload=auto_reload
-        )
-        self.bundles = CachedFile(
-            bundle_config_path, _load_bundles, auto_reload=auto_reload
-        )
+        self.manifest = CachedJSONFile(manifest_path, auto_reload=auto_reload)
+        self.bundles = CachedBundleFile(bundle_config_path, auto_reload=auto_reload)
 
     def files(self, bundle):
         """Return the file paths for all files in a bundle."""
@@ -108,18 +96,6 @@ def _check_cache_buster(environment, wrapped):
         return wrapped(context, request)
 
     return wrapper
-
-
-def _load_bundles(file_):
-    """
-    Parse a bundle config ini file.
-
-    Returns a mapping of bundle name to files that make up the bundle.
-    """
-
-    parser = configparser.ConfigParser()
-    parser.read_file(file_)
-    return {k: aslist(v) for k, v in parser.items("bundles")}
 
 
 def assets_view(environment: Environment):
