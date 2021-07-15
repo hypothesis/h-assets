@@ -13,6 +13,8 @@ class CachedFile:  # pylint:disable=too-few-public-methods
     provided loader.
     """
 
+    path = None
+
     def __init__(self, path, loader, auto_reload):
         """
         Create the CachedFile object.
