@@ -15,7 +15,7 @@ class CachedFile:  # pylint:disable=too-few-public-methods
 
     path = None
 
-    def __init__(self, path, loader, auto_reload):
+    def __init__(self, path, auto_reload):
         """
         Create the CachedFile object.
 
@@ -26,7 +26,6 @@ class CachedFile:  # pylint:disable=too-few-public-methods
         """
 
         self.path = path
-        self._loader = loader
         self._auto_reload = auto_reload
         self._last_modified_time = None
         self._cached_content = None
@@ -38,33 +37,33 @@ class CachedFile:  # pylint:disable=too-few-public-methods
         The file is parsed when this is called for the first time and, if
         auto-reload is enabled, when the mtime of the file changes.
         """
-        if self._cached_content and not self._auto_reload:
-            return self._cached_content
 
         current_mtime = getmtime(self.path)
-        if not self._cached_content or self._last_modified_time < current_mtime:
+
+        if not self._cached_content or (
+            self._auto_reload and self._last_modified_time < current_mtime
+        ):
             with open(self.path) as handle:
-                self._cached_content = self._loader(handle)
+                self._cached_content = self._load_handle(handle)
 
             self._last_modified_time = current_mtime
 
         return self._cached_content
 
-
-class CachedJSONFile(CachedFile):
-    def __init__(self, path, auto_reload):
-        def load_manifest(file_):
-            return json.load(file_)
-
-        super().__init__(path=path, loader=load_manifest, auto_reload=auto_reload)
-
-
-class CachedBundleFile(CachedFile):
-    def __init__(self, path, auto_reload):
-        super().__init__(path=path, loader=self._load_bundles, auto_reload=auto_reload)
-
     @classmethod
-    def _load_bundles(cls, handle):
+    def _load_handle(cls, handle):
+        return handle.read()
+
+
+class CachedJSONFile(CachedFile):  # pylint: disable=too-few-public-methods
+    @classmethod
+    def _load_handle(cls, handle):
+        return json.load(handle)
+
+
+class CachedBundleFile(CachedFile):  # pylint: disable=too-few-public-methods
+    @classmethod
+    def _load_handle(cls, handle):
         """
         Parse a bundle config ini file.
 
