@@ -3,8 +3,25 @@
 This package provides Pyramid views for serving collections of compiled static
 assets (eg. bundles of JavaScript and CSS).
 
-**TODO:** Add some notes here about how h-assets differs from Pyramid's built-in
-static views.
+Compared to Pyramid's builtin [static asset
+functionality](https://docs.pylonsproject.org/projects/pyramid/en/latest/narr/assets.html)
+, this provides a convenient way to serve assets based on certain assumptions
+about how assets are generated and opinions about how they should be served:
+
+- The assets are assumed to be compiled artefacts in an output directory
+  populated by frontend build tooling, rather than source files inside the
+  Python package. Typically Hypothesis applications use a `build` directory in
+  the root of the repository.
+- Cache busting is always enabled and is done via query strings. These query
+  strings are checked when serving a request to avoid responses being stored
+  under the wrong keys in downstream caches.
+- It is assumed that compressing bytes (eg. with gzip or Brotli) will be
+  handled by a service like Cloudflare, not the Python application.
+
+Additionally h-assets provides a way to define collections (_bundles_) of
+assets and methods to generate cache-busted URLs for all assets in the bundle.
+This is useful for example to render all the `<script>` or `<style>` tags that
+are needed by a certain part of a site.
 
 ## Usage
 
