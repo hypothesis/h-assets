@@ -37,6 +37,7 @@ class Environment:
         """
 
         self.assets_base_url = assets_base_url
+
         self.manifest = CachedJSONFile(manifest_path, auto_reload=auto_reload)
         self.bundles = CachedBundleFile(bundle_config_path, auto_reload=auto_reload)
 
@@ -53,9 +54,7 @@ class Environment:
         Returns the URLs at which all files in a bundle are served,
         read from the asset manifest.
         """
-        bundles = self.bundles.load()
-
-        return [self.url(path) for path in bundles[bundle]]
+        return [self.url(path) for path in self.files(bundle)]
 
     def url(self, path):
         """Return the cache-busted URL for an asset with a given path."""
