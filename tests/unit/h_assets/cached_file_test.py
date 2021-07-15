@@ -1,6 +1,33 @@
 import pytest
 
-from h_assets.cached_file import CachedFile
+from h_assets.cached_file import CachedBundleFile, CachedFile, CachedJSONFile
+
+
+class TestCachedJSONFile:
+    def test_it_parses_json(self, tmpdir):
+        json_file = tmpdir / "manifest.json"
+        json_file.write('{"a": 1}')
+
+        content = CachedJSONFile(json_file, auto_reload=True).load()
+
+        assert content == {"a": 1}
+
+
+class TestCachedBundleFile:
+    def test_it_parses_bundle_files(self, tmpdir):
+        bundle_file = tmpdir / "bundle.ini"
+        bundle_file.write(
+            """
+        [bundles]
+        app_js =
+          app.bundle.js
+          vendor.bundle.js
+        """
+        )
+
+        content = CachedBundleFile(bundle_file, auto_reload=True).load()
+
+        assert content == {"app_js": ["app.bundle.js", "vendor.bundle.js"]}
 
 
 class TestCachedFile:
