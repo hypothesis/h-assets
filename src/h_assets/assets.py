@@ -1,9 +1,10 @@
 from os.path import dirname
 
 from pyramid.httpexceptions import HTTPNotFound
+from pyramid.settings import aslist
 from pyramid.static import static_view
 
-from h_assets.cached_file import CachedBundleFile, CachedJSONFile
+from h_assets._cached_file import CachedINIFile, CachedJSONFile
 
 
 class Environment:
@@ -27,25 +28,24 @@ class Environment:
         """
         Construct an Environment from the given configuration files.
 
-        :param assets_base_url: The URL at which assets will be served,
+        :param assets_base_url: URL at which assets will be served,
             excluding the trailing slash.
-        :param bundle_config_path: Asset bundles config file.
-        :param manifest_path: JSON file mapping file paths in the bundle config
-            file to cache-busted URLs.
-        :param auto_reload: If True the config and manifest files are
-            automatically reloaded if they change.
+        :param bundle_config_path: Asset bundles config file path.
+        :param manifest_path: JSON file mapping bundle names to files and
+            cache-busted URLs for them
+        :param auto_reload: Automatically reload the config and manifest files
+         if they change.
         """
 
         self.assets_base_url = assets_base_url
 
-        self.manifest = CachedJSONFile(manifest_path, auto_reload=auto_reload)
-        self.bundles = CachedBundleFile(bundle_config_path, auto_reload=auto_reload)
+        self.manifest_file = CachedJSONFile(manifest_path, auto_reload=auto_reload)
+        self.bundle_file = CachedINIFile(bundle_config_path, auto_reload=auto_reload)
 
     def files(self, bundle):
         """Return the file paths for all files in a bundle."""
 
-        bundles = self.bundles.load()
-        return bundles[bundle]
+        return aslist(self.bundle_file.load()["bundles"][bundle])
 
     def urls(self, bundle):
         """
@@ -53,14 +53,22 @@ class Environment:
 
         Returns the URLs at which all files in a bundle are served,
         read from the asset manifest.
+
+        :param bundle: Bundle name to lookup.
+        :return: A list of URLs with cache busting hashes
         """
+
         return [self.url(path) for path in self.files(bundle)]
 
     def url(self, path):
-        """Return the cache-busted URL for an asset with a given path."""
+        """
+        Return the cache-busted URL for an asset with a given path.
 
-        manifest = self.manifest.load()
-        return "{}/{}".format(self.assets_base_url, manifest[path])
+        :param path: Path to lookup
+        :return: A URLs with cache busting hash
+        """
+
+        return "{}/{}".format(self.assets_base_url, self.manifest_file.load()[path])
 
     def check_cache_buster(self, path, query):
         """
@@ -68,14 +76,14 @@ class Environment:
 
         :param path: Path component of asset request
         :param query: Query string from asset request
-        :return: True if the asset path exists and the cache buster is valid
+        :return: Whether the asset path exists and the cache buster is valid
         """
 
         if path.startswith(self.assets_base_url):
             # Strip asset root (eg. `/assets/`) from path.
             path = path[len(self.assets_base_url) + 1 :]
 
-        manifest = self.manifest.load()
+        manifest = self.manifest_file.load()
         if path not in manifest:
             return False
 
@@ -85,7 +93,7 @@ class Environment:
     def asset_root(self):
         """Return the root directory from which assets are served."""
 
-        return dirname(self.manifest.path)
+        return dirname(self.manifest_file.path)
 
 
 def _check_cache_buster(environment, wrapped):
