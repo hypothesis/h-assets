@@ -1,8 +1,6 @@
 from os.path import dirname
 
-from pyramid.httpexceptions import HTTPNotFound
 from pyramid.settings import aslist
-from pyramid.static import static_view
 
 from h_assets._cached_file import CachedINIFile, CachedJSONFile
 
@@ -94,21 +92,3 @@ class Environment:
         """Return the root directory from which assets are served."""
 
         return dirname(self.manifest_file.path)
-
-
-def _check_cache_buster(environment, wrapped):
-    def wrapper(context, request):
-        if not environment.check_cache_buster(request.path, request.query_string):
-            return HTTPNotFound()
-        return wrapped(context, request)
-
-    return wrapper
-
-
-def assets_view(environment: Environment):
-    """Return a Pyramid view which serves static assets from ``env``."""
-
-    return _check_cache_buster(
-        environment,
-        static_view(environment.asset_root(), cache_max_age=None, use_subpath=True),
-    )
