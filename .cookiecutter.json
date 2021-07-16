@@ -7,7 +7,6 @@
         "disable_replay": [
             "README.md",
             "setup.cfg",
-            "pyproject.toml",
             "src/h_assets/__init__.py"
         ]
     },
