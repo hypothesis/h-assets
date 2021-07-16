@@ -1,6 +1,8 @@
+from configparser import ConfigParser
+
 import pytest
 
-from h_assets.cached_file import CachedBundleFile, CachedFile, CachedJSONFile
+from h_assets._cached_file import CachedFile, CachedINIFile, CachedJSONFile
 
 
 class TestCachedJSONFile:
@@ -13,21 +15,15 @@ class TestCachedJSONFile:
         assert content == {"a": 1}
 
 
-class TestCachedBundleFile:
-    def test_it_parses_bundle_files(self, tmpdir):
-        bundle_file = tmpdir / "bundle.ini"
-        bundle_file.write(
-            """
-        [bundles]
-        app_js =
-          app.bundle.js
-          vendor.bundle.js
-        """
-        )
+class TestCachedINIFile:
+    def test_it_parses_ini_files(self, tmpdir):
+        ini_file = tmpdir / "data.ini"
+        ini_file.write("[section]\nkey = value")
 
-        content = CachedBundleFile(bundle_file, auto_reload=True).load()
+        content = CachedINIFile(ini_file, auto_reload=True).load()
 
-        assert content == {"app_js": ["app.bundle.js", "vendor.bundle.js"]}
+        assert isinstance(content, ConfigParser)
+        assert content.items("section") == [("key", "value")]
 
 
 class TestCachedFile:
@@ -59,7 +55,7 @@ class TestCachedFile:
 
     @pytest.fixture(autouse=True)
     def getmtime(self, patch):
-        getmtime = patch("h_assets.cached_file.getmtime")
+        getmtime = patch("h_assets._cached_file.getmtime")
         getmtime.return_value = 1000
 
         return getmtime

@@ -1,14 +1,15 @@
+from configparser import ConfigParser
 from unittest.mock import create_autospec, sentinel
 
 import pytest
 from pyramid.httpexceptions import HTTPNotFound
 from pyramid.testing import DummyRequest
 
-from h_assets import Environment, assets_view
+from h_assets.assets import Environment, assets_view
 
 
 class TestEnvironment:
-    def test_initialisation(self, CachedBundleFile, CachedJSONFile):
+    def test_initialisation(self, CachedINIFile, CachedJSONFile):
         environment = Environment(
             assets_base_url=sentinel.assets_base_url,
             bundle_config_path=sentinel.bundle_ini,
@@ -17,20 +18,20 @@ class TestEnvironment:
         )
 
         assert environment.assets_base_url == sentinel.assets_base_url
-        CachedBundleFile.assert_called_once_with(
+        CachedINIFile.assert_called_once_with(
             sentinel.bundle_ini, auto_reload=sentinel.auto_reload
         )
-        assert environment.bundles == CachedBundleFile.return_value
+        assert environment.bundle_file == CachedINIFile.return_value
         CachedJSONFile.assert_called_once_with(
             sentinel.manifest_json, auto_reload=sentinel.auto_reload
         )
-        assert environment.manifest == CachedJSONFile.return_value
+        assert environment.manifest_file == CachedJSONFile.return_value
 
     def test_files(self, environment):
         assert environment.files("app_js") == ["app.bundle.js", "vendor.bundle.js"]
 
     def test_asset_root(self, environment):
-        environment.manifest.path = "/some_path/file.name"
+        environment.manifest_file.path = "/some_path/file.name"
         assert environment.asset_root() == "/some_path"
 
     @pytest.mark.parametrize(
@@ -73,14 +74,21 @@ class TestEnvironment:
         )
 
     @pytest.fixture(autouse=True)
-    def CachedBundleFile(self, patch):
-        CachedBundleFile = patch("h_assets.assets.CachedBundleFile")
+    def CachedINIFile(self, patch):
+        CachedINIFile = patch("h_assets.assets.CachedINIFile")
 
-        CachedBundleFile.return_value.load.return_value = {
-            "app_js": ["app.bundle.js", "vendor.bundle.js"]
-        }
+        parser = ConfigParser()
+        parser.read_dict(
+            {
+                "bundles": {
+                    "app_js": "app.bundle.js\nvendor.bundle.js",
+                }
+            }
+        )
 
-        return CachedBundleFile
+        CachedINIFile.return_value.load.return_value = parser
+
+        return CachedINIFile
 
     @pytest.fixture(autouse=True)
     def CachedJSONFile(self, patch):

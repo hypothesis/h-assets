@@ -1,17 +1,12 @@
-import configparser
-import json
-from os.path import getmtime
+"""Objects for reading and caching various file formats."""
 
-from pyramid.settings import aslist
+import json
+from configparser import ConfigParser
+from os.path import getmtime
 
 
 class CachedFile:  # pylint:disable=too-few-public-methods
-    """
-    Parses content from a file and caches the result.
-
-    _CachedFile reads a file at a given path and parses the content using a
-    provided loader.
-    """
+    """Parses content from a file and caches the result."""
 
     path = None
 
@@ -19,10 +14,9 @@ class CachedFile:  # pylint:disable=too-few-public-methods
         """
         Create the CachedFile object.
 
-        :param path: The path to the file to load
-        :param loader: A callable that parses content from a file
-        :param auto_reload: If True, the parsed content is discarded if the
-            mtime of the file changes.
+        :param path: Path of the file to load
+        :param auto_reload: Reload the contents of the file if they change
+            based on last modified time
         """
 
         self.path = path
@@ -32,10 +26,10 @@ class CachedFile:  # pylint:disable=too-few-public-methods
 
     def load(self):
         """
-        Return the content of the file parsed with the loader.
+        Return the content of the file.
 
-        The file is parsed when this is called for the first time and, if
-        auto-reload is enabled, when the mtime of the file changes.
+        If auto-reload is enabled, this will automatically return the most up
+        to date file contents by monitoring the last modified time (mtime).
         """
 
         current_mtime = getmtime(self.path)
@@ -52,24 +46,31 @@ class CachedFile:  # pylint:disable=too-few-public-methods
 
     @classmethod
     def _load_handle(cls, handle):
+        """
+        Return the contents of the passed handle.
+
+        This function is to allow customisation by sub-classes.
+        """
         return handle.read()
 
 
 class CachedJSONFile(CachedFile):  # pylint: disable=too-few-public-methods
+    """Cached and decode JSON files."""
+
     @classmethod
     def _load_handle(cls, handle):
+        """Parse a JSON file returning the decoded Python data structure."""
+
         return json.load(handle)
 
 
-class CachedBundleFile(CachedFile):  # pylint: disable=too-few-public-methods
+class CachedINIFile(CachedFile):  # pylint: disable=too-few-public-methods
+    """Cache and decode an INI file."""
+
     @classmethod
-    def _load_handle(cls, handle):
-        """
-        Parse a bundle config ini file.
+    def _load_handle(cls, handle) -> ConfigParser:
+        """Parse a bundle config ini file."""
 
-        Returns a mapping of bundle name to files that make up the bundle.
-        """
-
-        parser = configparser.ConfigParser()
+        parser = ConfigParser()
         parser.read_file(handle)
-        return {k: aslist(v) for k, v in parser.items("bundles")}
+        return parser
