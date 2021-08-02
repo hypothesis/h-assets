@@ -13,8 +13,8 @@ about how assets are generated and opinions about how they should be served:
   Python package. Typically Hypothesis applications use a `build` directory in
   the root of the repository.
 - Cache busting is always enabled and is done via query strings. These query
-  strings are checked when serving a request to avoid responses being stored
-  under the wrong keys in downstream caches.
+  strings are checked, if present, when serving a request to avoid responses
+  being stored under the wrong keys in downstream caches.
 - It is assumed that compressing bytes (eg. with gzip or Brotli) will be
   handled by a service like Cloudflare, not the Python application.
 
