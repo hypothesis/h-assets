@@ -37,7 +37,7 @@ class CachedFile:  # pylint:disable=too-few-public-methods
         if not self._cached_content or (
             self._auto_reload and self._last_modified_time < current_mtime
         ):
-            with open(self.path) as handle:
+            with open(self.path, encoding="utf-8") as handle:
                 self._cached_content = self._load_handle(handle)
 
             self._last_modified_time = current_mtime

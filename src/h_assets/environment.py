@@ -66,7 +66,7 @@ class Environment:
         :return: A URLs with cache busting hash
         """
 
-        return "{}/{}".format(self.assets_base_url, self.manifest_file.load()[path])
+        return f"{self.assets_base_url}/{self.manifest_file.load()[path]}"
 
     def check_cache_buster(self, path, query):
         """
