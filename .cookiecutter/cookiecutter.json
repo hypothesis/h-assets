@@ -8,7 +8,7 @@
     "package_name": "h_assets",
     "slug": "h-assets",
     "short_description": "Pyramid views for serving collections of compiled static assets (eg. bundles of JavaScript and CSS).",
-    "python_versions": "3.9.4,3.8.9",
+    "python_versions": "3.9.13,3.8.13",
     "github_owner": "hypothesis",
     "copyright_holder": "Hypothesis",
     "visibility": "public",
