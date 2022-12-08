@@ -1,4 +1,3 @@
-
 Compared to Pyramid's builtin [static asset
 functionality](https://docs.pylonsproject.org/projects/pyramid/en/latest/narr/assets.html)
 , this provides a convenient way to serve assets based on certain assumptions
