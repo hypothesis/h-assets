@@ -158,7 +158,7 @@ Then to set up your development environment:
 
 ```terminal
 git clone https://github.com/hypothesis/h-assets.git
-cd h_assets
+cd h-assets
 make help
 ```
 
