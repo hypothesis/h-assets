@@ -50,6 +50,9 @@ class TestAssetsView:
         static_view.return_value.assert_not_called()
         assert isinstance(response, HTTPNotFound)
 
+        # Returns "*" though set to `True`
+        assert response.cache_control.no_cache  # pylint: disable=no-member
+
     @pytest.fixture
     def environment(self):
         return create_autospec(Environment, instance=True, spec_set=True)

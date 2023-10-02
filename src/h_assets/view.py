@@ -16,7 +16,14 @@ def assets_view(environment: Environment):
         if request.query_string and not environment.check_cache_buster(
             request.path, request.query_string
         ):
-            return HTTPNotFound()
+            response = HTTPNotFound()
+
+            # Disable downstream caching of failed responses, in case this
+            # happened due to version skew during a deployment. See
+            # https://github.com/hypothesis/h-assets/issues/27.
+            response.cache_control.no_cache = True
+
+            return response
 
         return static(context, request)
 
