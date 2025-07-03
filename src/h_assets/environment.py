@@ -68,6 +68,32 @@ class Environment:
 
         return f"{self.assets_base_url}/{self.manifest_file.load()[path]}"
 
+    def import_map(self):
+        """
+        Return JSON-serializable content for an import map.
+
+        An import map can be used to configure how module specifiers in
+        JS `import` statements and `import()` expressions are mapped to URLs.
+        By rendering an import map into the HTML of the page, dynamic imports
+        in module scripts will be mapped from their original URLs to the
+        cache-busted versions.
+
+        The use of import maps is especially important if a bundle might be
+        be referenced in both server-rendered HTML via `<script>` tags and
+        dynamic imports. In that case all references need to use the same URL
+        to ensure that the module is only instantiated once.
+
+        See https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/script/type/importmap.
+        """
+        base_url = self.assets_base_url
+        imports = {
+            f"{base_url}/{path}": f"{base_url}/{cache_busted_path}"
+            for path, cache_busted_path in self.manifest_file.load().items()
+            # Import maps are currently only used by scripts.
+            if path.endswith(".js")
+        }
+        return {"imports": imports}
+
     def check_cache_buster(self, path, query):
         """
         Check if the cache buster in an asset request URL matches the manifest.
