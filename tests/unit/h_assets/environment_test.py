@@ -62,6 +62,14 @@ class TestEnvironment:
             "/assets/vendor.bundle.js?hash_vendor",
         ]
 
+    def test_import_map(self, environment):
+        assert environment.import_map() == {
+            "imports": {
+                "/assets/app.bundle.js": "/assets/app.bundle.js?hash_app",
+                "/assets/vendor.bundle.js": "/assets/vendor.bundle.js?hash_vendor",
+            }
+        }
+
     @pytest.fixture
     def environment(self):
         return Environment(
@@ -95,6 +103,7 @@ class TestEnvironment:
         CachedJSONFile.return_value.load.return_value = {
             "app.bundle.js": "app.bundle.js?hash_app",
             "vendor.bundle.js": "vendor.bundle.js?hash_vendor",
+            "app.css": "app.css?hash_app_css",
         }
 
         return CachedJSONFile
